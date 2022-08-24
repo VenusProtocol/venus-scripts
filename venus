@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+function configureNetwork({ network, block }) {
+  process.env.HARDHAT_NETWORK = network;
+  if (block !== "latest" && network !== "hardhat") {
+    throw new Error("Forking is only supported for hardhat network");
+  }
+  process.env.SIM_BLOCK_NUMBER = block;
+}
+
+require("yargs/yargs")(process.argv.slice(2))
+  .command(
+    "get-reserves <outputFile>",
+    "Get the reserves snapshot",
+    (yargs) => {
+      yargs.positional('outputFile', {
+        describe: 'Either .csv or .json file to write the output to',
+        type: 'string',
+        default: 'reserves.csv'
+      })
+    },
+    (argv) => {
+      configureNetwork(argv);
+      const { getReserves } = require("./src/commands/getReserves");
+      getReserves(argv.outputFile)
+    }
+  )
+  .command(
+    "get-treasury-vtokens <outputFile>",
+    "Get the reserves snapshot",
+    (yargs) => {
+      yargs.positional('outputFile', {
+        describe: 'Either .csv or .json file to write the output to',
+        type: 'string',
+        default: 'treasuryVTokens.csv'
+      })
+    },
+    (argv) => {
+      configureNetwork(argv);
+      const { getTreasuryVTokens } = require("./src/commands/getTreasuryVTokens");
+      getTreasuryVTokens(argv.outputFile)
+    }
+  )
+  .option("n", {
+    alias: "network",
+    default: "hardhat"
+  })
+  .option("b", {
+    alias: "block",
+    default: "latest"
+  })
+  .demandCommand()
+  .help()
+  .argv

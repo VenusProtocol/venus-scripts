@@ -1,37 +1,25 @@
 const { BigNumber } = require("bignumber.js");
 const { deployment, getComptroller, getOracle, getAllMarkets, getUnderlying } = require("../lib/venus");
-const { dec, pr } = require("../lib/util");
+const { dec, pr, save } = require("../lib/util");
 
 
-function printCsv(input) {
-  const header = [
-    'symbol',
-    'vToken',
-    'underlying',
-    'reservesMantissa',
-    'reserves',
-    'decimals',
-    'price',
-    'usdValue'
-  ];
-  console.log(header.join(';'));
-  for (line of input) {
-    const { symbol, vToken, underlying, reservesMantissa, reserves, decimals, price, usdValue } = line;
-    console.log([symbol, vToken, underlying, reservesMantissa, reserves, decimals, price, usdValue].join(';'));
-  }
-}
+const columns = [
+  'symbol',
+  'vToken',
+  'underlying',
+  'reservesMantissa',
+  'reserves',
+  'decimals',
+  'price',
+  'usdValue'
+];
 
-async function getReserves() {
-  console.log("Hello!");
+async function getReserves(fileName) {
   const comptroller = await getComptroller();
-  console.log("Let me get some reserves for you!");
   const oracle = await getOracle(comptroller);
-  console.log("I got the oracle");
   const allMarkets = await getAllMarkets(comptroller);
-  console.log("and the markets");
   const result = [];
   for (const vToken of allMarkets) {
-    console.log("and now I'm getting the reserves of some coin");
     const reserves = await vToken.totalReserves();
     let decimals;
     let symbol;
@@ -44,12 +32,10 @@ async function getReserves() {
       decimals = new BigNumber((await underlying.decimals()).toString());
       symbol = await underlying.symbol();
     }
-    console.log(`${symbol}, to be precise`);
     if (['CAN', 'LUNA', 'UST'].includes(symbol)) {
       continue;
     }
     const price = await oracle.getUnderlyingPrice(vToken.address);
-    console.log(`Ok, ${symbol} costs ${pr(price, decimals)}`);
     const decimalReserves = dec(reserves, decimals);
     const decimalPrice = pr(price, decimals);
     const row = {
@@ -63,12 +49,9 @@ async function getReserves() {
       usdValue: (decimalReserves.multipliedBy(decimalPrice)).toString()
     };
     result.push(row);
+    console.log(`${symbol} reserves are ${row.reserves} ($${row.usdValue})`)
   }
-  printCsv(result);
+  await save(fileName, result, columns);
 }
 
-getReserves()
-  .catch(err => {
-    console.error(err);
-    process.exit(1);
-  });
+module.exports = { getReserves };
