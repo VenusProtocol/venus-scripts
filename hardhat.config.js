@@ -11,9 +11,17 @@ module.exports = {
    hardhat: {
       chainId: 56,
       forking: {
-        url: "https://bsc-mainnet.nodereal.io/v1/ba380d7666604315bf64626983685899",
+        url: process.env.BSC_ARCHIVE_NODE,
         blockNumber: block === "latest" ? undefined : parseInt(block)
       }
-    }
+    },
+    bsctestnet: {
+      url: process.env.BSC_ARCHIVE_NODE,
+      chainId: 97,
+    },
+    bscmainnet: {
+      url: process.env.BSC_ARCHIVE_NODE,
+      chainId: 56,
+    },
   }
 };
